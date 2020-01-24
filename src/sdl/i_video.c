@@ -1758,7 +1758,7 @@ void I_StartupGraphics(void)
 		HWD.pfnKillShaders = hwSym("KillShaders",NULL);
 		HWD.pfnSetShader = hwSym("SetShader",NULL);
 		HWD.pfnUnSetShader = hwSym("UnSetShader",NULL);
-
+		HWD.pfnSetShaderInfo    = hwSym("SetShaderInfo",NULL);
 		HWD.pfnLoadCustomShader = hwSym("LoadCustomShader",NULL);
 		HWD.pfnInitCustomShaders = hwSym("InitCustomShaders",NULL);
 
