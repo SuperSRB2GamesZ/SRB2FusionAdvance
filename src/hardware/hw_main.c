@@ -5916,14 +5916,15 @@ static inline void HWR_AddEngineCommands(void)
 // --------------------------------------------------------------------------
 void HWR_Startup(void)
 {
-	INT32 i;
 	static boolean startupdone = false;
 
 
 	// do this once
 	if (!startupdone)
 	{
-		CONS_Printf("HWR_Startup()\n");
+		INT32 i;
+		CONS_Printf("HWR_Startup()...\n");
+
 		HWR_InitPolyPool();
 		// add console cmds & vars
 		HWR_AddEngineCommands();
@@ -5934,6 +5935,11 @@ void HWR_Startup(void)
 #ifdef ALAM_LIGHTING
 		HWR_InitLight();
 #endif
+
+		// read every custom shader
+		for (i = 0; i < numwadfiles; i++)
+			HWR_ReadShaders(i, (wadfiles[i]->type == RET_PK3));
+		HWR_LoadShaders();
 	}
 
 	if (rendermode == render_opengl)
@@ -5945,11 +5951,6 @@ void HWR_Startup(void)
 #endif
 
 	startupdone = true;
-
-
-	for (i = 0; i < numwadfiles; i++)
-		HWR_LoadShaders(i, (wadfiles[i]->type == RET_PK3));
-	HWD.pfnInitCustomShaders();
 }
 
 
@@ -6231,7 +6232,12 @@ static inline UINT16 HWR_CheckShader(UINT16 wadnum)
 	return INT16_MAX;
 }
 
-void HWR_LoadShaders(UINT16 wadnum, boolean PK3)
+void HWR_LoadShaders(void)
+{
+	HWD.pfnInitCustomShaders();
+}
+
+void HWR_ReadShaders(UINT16 wadnum, boolean PK3)
 {
 	UINT16 lump;
 	char *shaderdef, *line;
@@ -6262,9 +6268,6 @@ void HWR_LoadShaders(UINT16 wadnum, boolean PK3)
 	size = W_LumpLengthPwad(wadnum, lump);
 
 	line = Z_Malloc(size+1, PU_STATIC, NULL);
-	if (!line)
-		I_Error("HWR_LoadShaders: No more free memory\n");
-
 	M_Memcpy(line, shaderdef, size);
 	line[size] = '\0';
 
@@ -6283,7 +6286,7 @@ void HWR_LoadShaders(UINT16 wadnum, boolean PK3)
 			value = strtok(NULL, "\r\n ");
 			if (!value)
 			{
-				CONS_Alert(CONS_WARNING, "HWR_LoadShaders: Missing shader type (file %s, line %d)\n", wadfiles[wadnum]->filename, linenum);
+				CONS_Alert(CONS_WARNING, "HWR_ReadShaders: Missing shader type (file %s, line %d)\n", wadfiles[wadnum]->filename, linenum);
 				stoken = strtok(NULL, "\r\n"); // skip end of line
 				goto skip_lump;
 			}
@@ -6302,14 +6305,14 @@ skip_lump:
 			value = strtok(NULL, "\r\n= ");
 			if (!value)
 			{
-				CONS_Alert(CONS_WARNING, "HWR_LoadShaders: Missing shader target (file %s, line %d)\n", wadfiles[wadnum]->filename, linenum);
+				CONS_Alert(CONS_WARNING, "HWR_ReadShaders: Missing shader target (file %s, line %d)\n", wadfiles[wadnum]->filename, linenum);
 				stoken = strtok(NULL, "\r\n"); // skip end of line
 				goto skip_field;
 			}
 
 			if (!shadertype)
 			{
-				CONS_Alert(CONS_ERROR, "HWR_LoadShaders: Missing shader type (file %s, line %d)\n", wadfiles[wadnum]->filename, linenum);
+				CONS_Alert(CONS_ERROR, "HWR_ReadShaders: Missing shader type (file %s, line %d)\n", wadfiles[wadnum]->filename, linenum);
 				Z_Free(line);
 				return;
 			}
@@ -6340,7 +6343,7 @@ skip_lump:
 
 					if (shader_lumpnum == INT16_MAX)
 					{
-						CONS_Alert(CONS_ERROR, "HWR_LoadShaders: Missing shader source %s (file %s, line %d)\n", shader_lumpname, wadfiles[wadnum]->filename, linenum);
+						CONS_Alert(CONS_ERROR, "HWR_ReadShaders: Missing shader source %s (file %s, line %d)\n", shader_lumpname, wadfiles[wadnum]->filename, linenum);
 						Z_Free(shader_lumpname);
 						continue;
 					}
