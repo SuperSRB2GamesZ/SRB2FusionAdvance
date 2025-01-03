@@ -15,7 +15,7 @@
 #ifndef __DOOMDEF__
 #define __DOOMDEF__
 
-//#define ALAM_LIGHTING
+#define ALAM_LIGHTING
 
 // Sound system select
 // This should actually be in the makefile,
