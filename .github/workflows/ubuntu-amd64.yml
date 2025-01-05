@@ -28,7 +28,7 @@ jobs:
     - name: Upload Artifacts
       uses: actions/upload-artifact@v4.5.0
       with:
-        name: srb2fusionadvance-linux-${{ github.ref_name }}-${{ github.sha }}-x86_64
+        name: srb2fusionadvance-linux-${{ github.ref_name }}-x86_64
         path: |
           bin/
           src/comptime.h
