@@ -137,7 +137,8 @@ typedef struct vissprite_s
 	fixed_t xiscale; // negative if flipped
 
 	fixed_t texturemid;
-	lumpnum_t patch;
+	patch_t *patch;
+
 
 	lighttable_t *colormap; // for color translation and shadow draw
 	                        // maxbright frames as well
