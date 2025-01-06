@@ -368,6 +368,8 @@ typedef struct mobj_s
 	struct pslope_s *standingslope; // The slope that the object is standing on (shouldn't need synced in savegames, right?)
 #endif
 
+	fixed_t shadowscale; // If this object casts a shadow, and the size relative to radius
+
 	// WARNING: New fields must be added separately to savegame and Lua.
 } mobj_t;
 

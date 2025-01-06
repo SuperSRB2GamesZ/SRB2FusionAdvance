@@ -113,7 +113,10 @@ typedef enum
 {
 	SC_NONE = 0,
 	SC_TOP = 1,
-	SC_BOTTOM = 2
+	SC_BOTTOM = 2,
+
+	SC_ISSCALED = 1<<6,
+	SC_SHADOW = 1<<7,
 } spritecut_e;
 
 // A vissprite_t is a thing that will be drawn during a refresh,
@@ -135,6 +138,10 @@ typedef struct vissprite_s
 	fixed_t startfrac; // horizontal position of x1
 	fixed_t scale;
 	fixed_t xiscale; // negative if flipped
+	struct {
+		fixed_t tan; // The amount to shear the sprite vertically per row
+		INT32 offset; // The center of the shearing location offset from x1
+	} shear;
 
 	fixed_t texturemid;
 	patch_t *patch;
