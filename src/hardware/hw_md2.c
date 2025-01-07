@@ -1006,6 +1006,12 @@ void HWR_DrawMD2(gr_vissprite_t *spr)
 			md2_loadTexture(md2);
 		gpatch = md2->grpatch; // Load it again, because it isn't being loaded into gpatch after md2_loadtexture...
 
+	#ifdef ALAM_LIGHTING
+	if (!(spr->mobj->flags2 & MF2_DEBRIS) && (spr->mobj->sprite != SPR_PLAY ||
+	 (spr->mobj->player && spr->mobj->player->powers[pw_super])))
+		HWR_DL_AddLight(spr, gpatch);
+	#endif
+
 		if ((gpatch && gpatch->mipmap.grInfo.format) // don't load the blend texture if the base texture isn't available
 			&& (!md2->blendgrpatch || !((GLPatch_t *)md2->blendgrpatch)->mipmap.grInfo.format || !((GLPatch_t *)md2->blendgrpatch)->mipmap.downloaded))
 			md2_loadBlendTexture(md2);
