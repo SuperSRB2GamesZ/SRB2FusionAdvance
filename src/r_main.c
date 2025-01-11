@@ -822,7 +822,7 @@ void R_SetupFrame(player_t *player, boolean skybox)
 		newview->z = player->viewz;
 
 		r_viewmobj = player->mo;
-		I_Assert(viewmobj != NULL);
+		I_Assert(r_viewmobj != NULL);
 
 		newview->aim = player->aiming;
 		newview->angle = r_viewmobj->angle;
@@ -897,7 +897,7 @@ void R_SkyboxFrame(player_t *player)
 	newview->sky = true;
 	r_viewmobj = skyboxmo[0];
 #ifdef PARANOIA
-	if (!(viewmobj))
+	if (!(r_viewmobj))
 	{
 		const size_t playeri = (size_t)(player - players);
 		I_Error("R_SkyboxFrame: viewmobj null (player %s)", sizeu1(playeri));
