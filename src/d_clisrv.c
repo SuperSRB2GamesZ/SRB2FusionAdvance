@@ -128,6 +128,8 @@ static boolean cl_packetmissed;
 // here it is for the secondary local player (splitscreen)
 static UINT8 mynode; // my address pointofview server
 
+boolean is_client_fusionadvance[MAXNETNODES];
+
 static UINT8 localtextcmd[MAXTEXTCMD];
 static UINT8 localtextcmd2[MAXTEXTCMD]; // splitscreen
 static tic_t neededtic;
@@ -2386,6 +2388,7 @@ static void CL_RemovePlayer(INT32 playernum, INT32 reason)
 			// If a resynch was in progress, well, it no longer needs to be.
 			SV_InitResynchVars(playernode[playernum]);
 
+			is_client_fusionadvance[playernode[playernum]] = false;
 			nodeingame[playernode[playernum]] = false;
 			Net_CloseConnection(playernode[playernum]);
 			ResetNode(node);
@@ -2476,6 +2479,7 @@ void CL_Reset(void)
 	if (servernode > 0 && servernode < MAXNETNODES)
 	{
 		nodeingame[(UINT8)servernode] = false;
+		is_client_fusionadvance[(UINT8)servernode] = false;
 		Net_CloseConnection(servernode);
 	}
 	D_CloseConnection(); // netgame = false
@@ -3001,6 +3005,7 @@ void D_ClientServerInit(void)
 static void ResetNode(INT32 node)
 {
 	nodeingame[node] = false;
+	is_client_fusionadvance[node] = false;
 	nodetoplayer[node] = -1;
 	nodetoplayer2[node] = -1;
 	nettics[node] = gametic;
@@ -3438,6 +3443,13 @@ static size_t TotalTextCmdPerTic(tic_t tic)
 	return total;
 }
 
+
+static inline void SendFAInfo(INT32 node)
+{
+	netbuffer->packettype = PT_ISFUSIONADVANCE;
+	HSendPacket(node, true, 0, 0);
+}
+
 /** Called when a PT_CLIENTJOIN packet is received
   *
   * \param node The packet sender
@@ -3500,8 +3512,7 @@ static void HandleConnect(SINT8 node)
 #ifdef JOININGAME
 		if (nodewaiting[node])
 		{
-			netbuffer->packettype = PT_ISFUSIONADVANCE;
-			HSendPacket(node, false, 0, 0);
+			SendFAInfo(node);
 			if ((gamestate == GS_LEVEL || gamestate == GS_INTERMISSION) && newnode)
 			{
 				SV_SendSaveGame(node); // send a complete game state
@@ -4038,6 +4049,7 @@ FILESTAMP
 			}
 			Net_CloseConnection(node);
 			nodeingame[node] = false;
+			is_client_fusionadvance[node] = false;
 			break;
 // -------------------------------------------- CLIENT RECEIVE ----------
 		case PT_RESYNCHEND:
@@ -4203,6 +4215,7 @@ FILESTAMP
 			break;
 		case PT_ISFUSIONADVANCE:
 			CONS_Printf("hi im on fusion advance\n");
+			is_client_fusionadvance[node] = true;
 			break;
 		default:
 			DEBFILE(va("UNKNOWN PACKET TYPE RECEIVED %d from host %d\n",
