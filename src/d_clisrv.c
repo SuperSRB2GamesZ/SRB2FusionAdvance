@@ -121,6 +121,8 @@ static UINT8 player_joining = false;
 UINT8 hu_resynching = 0;
 UINT8 hu_redownloadinggamestate = 0;
 
+static boolean can_receive_gamestate[MAXNETNODES];
+
 UINT8 adminpassmd5[16];
 boolean adminpasswordset = false;
 
@@ -1381,7 +1383,7 @@ static boolean SV_SendServerConfig(INT32 node)
 	netbuffer->u.servercfg.gametype = (UINT8)gametype;
 	netbuffer->u.servercfg.modifiedgame = (UINT8)modifiedgame;
 
-	if (!resendingsavegame[node])
+	if (!can_receive_gamestate[node])
 	{
 		// we fill these structs with FFs so that any players not in game get sent as 0xFFFF
 		// which is nice and easy for us to detect
@@ -1403,7 +1405,7 @@ static boolean SV_SendServerConfig(INT32 node)
 	}
 
 	memcpy(netbuffer->u.servercfg.server_context, server_context, 8);
-	if (!resendingsavegame[node])
+	if (!can_receive_gamestate[node])
 	{
 		op = p = netbuffer->u.servercfg.varlengthinputs;
 
@@ -1413,7 +1415,7 @@ static boolean SV_SendServerConfig(INT32 node)
 	{
 		size_t len;
 
-		if (resendingsavegame[node])
+		if (can_receive_gamestate[node])
 			len = sizeof (serverconfig_pak);
 		else
 			len = sizeof (serverconfig_pak) + (size_t)(p - op);
@@ -1645,6 +1647,15 @@ static void CL_ReloadReceivedSavegame(void)
 	maketic = neededtic;
 
 	camera.subsector = R_PointInSubsector(camera.x, camera.y);
+
+
+	P_ForceLocalAngle(&players[consoleplayer], (angle_t)(players[consoleplayer].cmd.angleturn << 16));
+
+
+	if (splitscreen)
+	{
+		P_ForceLocalAngle(&players[secondarydisplayplayer], (angle_t)(players[secondarydisplayplayer].cmd.angleturn << 16));
+	}
 
 	cl_redownloadinggamestate = false;
 
@@ -3080,6 +3091,7 @@ static void ResetNode(INT32 node)
 	playerpernode[node] = 0;
 	sendingsavegame[node] = false;
 	resendingsavegame[node] = false;
+	can_receive_gamestate[node] = false;
 	savegameresendcooldown[node] = 0;
 }
 
@@ -3581,7 +3593,7 @@ static void HandleConnect(SINT8 node)
 #ifdef JOININGAME
 		if (nodewaiting[node])
 		{
-			SendFAInfo(node);
+
 			if ((gamestate == GS_LEVEL || gamestate == GS_INTERMISSION) && newnode)
 			{
 				SV_SendSaveGame(node, false); // send a complete game state
@@ -3813,6 +3825,8 @@ static void HandlePacketFromAwayNode(SINT8 node)
 #endif
 			DEBFILE(va("Server accept join gametic=%u mynode=%d\n", gametic, mynode));
 
+			SendFAInfo(node);
+
 			memset(playeringame, 0, sizeof(playeringame));
 			for (j = 0; j < MAXPLAYERS; j++)
 			{
@@ -3878,7 +3892,7 @@ static void HandlePacketFromAwayNode(SINT8 node)
 			/* FALLTHRU */
 
 		case PT_ISFUSIONADVANCE:
-			CONS_Printf("hi im on fusion advance\n");
+			//CONS_Printf("hi im on fusion advance\n");
 			break;
 
 		default:
@@ -4007,14 +4021,20 @@ FILESTAMP
 				&& consistancy[realstart%BACKUPTICS] != SHORT(netbuffer->u.clientpak.consistancy)
 				&& !resendingsavegame[node] && savegameresendcooldown[node] <= I_GetTime()))
 			{
-				SV_RequireResynch(node);
+				
+				// we need to send this so the client can tell us if it can receive the savegame
+				netbuffer->packettype = PT_WILLRESENDGAMESTATE;
+				HSendPacket(node, true, 0, 0);
 
+				if (can_receive_gamestate[node])
 				{
-					// Tell the client we are about to resend them the gamestate
-					netbuffer->packettype = PT_WILLRESENDGAMESTATE;
-					HSendPacket(node, true, 0, 0);
-
 					resendingsavegame[node] = true;
+				}
+				else
+				{
+					CONS_Printf("resynch");
+					SV_RequireResynch(node);
+					resendingsavegame[node] = false;
 				}
 
 				if (cv_resynchattempts.value && resynch_score[node] <= (unsigned)cv_resynchattempts.value*250)
@@ -4167,6 +4187,7 @@ FILESTAMP
 			Net_CloseConnection(node);
 			nodeingame[node] = false;
 			is_client_fusionadvance[node] = false;
+			can_receive_gamestate[node] = false;
 			break;
 // -------------------------------------------- CLIENT RECEIVE ----------
 		case PT_RESYNCHEND:
@@ -4331,10 +4352,11 @@ FILESTAMP
 				Got_Filetxpak();
 			break;
 		case PT_ISFUSIONADVANCE:
-			CONS_Printf("hi im on fusion advance\n");
+			//CONS_Printf("hi im on fusion advance\n");
 			is_client_fusionadvance[node] = true;
 			break;
 		case PT_CANRECEIVEGAMESTATE:
+			can_receive_gamestate[node] = true;
 			PT_CanReceiveGamestate(node);
 			break;
 		case PT_RECEIVEDGAMESTATE:

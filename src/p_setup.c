@@ -2268,8 +2268,6 @@ static void P_LevelInitStuff(boolean reloadinggamestate)
 
 	leveltime = 0;
 
-	localaiming = 0;
-	localaiming2 = 0;
 
 	// special stage tokens, emeralds, and ring total
 	tokenbits = 0;
@@ -2375,6 +2373,10 @@ void P_LoadThingsOnly(void)
 	}
 
 	P_LevelInitStuff(false);
+
+	// thing to fix aiming being reset on resend gamestate
+	localaiming = 0;
+	localaiming2 = 0;
 
 	if (W_IsLumpWad(lastloadedmaplumpnum)) // welp it's a map wad in a pk3
 	{ // HACK: Open wad file rather quickly so we can use the things lump
@@ -2648,6 +2650,38 @@ static void P_SetupCamera(void)
 		}
 	}
 }
+
+static void P_InitCamera(void)
+	{
+		P_SetupCamera();
+
+		// Salt: CV_ClearChangedFlags() messes with your settings :(
+		/*if (!cv_cam_height.changed)
+			CV_Set(&cv_cam_height, cv_cam_height.defaultvalue);
+
+		if (!cv_cam_dist.changed)
+			CV_Set(&cv_cam_dist, cv_cam_dist.defaultvalue);
+
+		if (!cv_cam2_height.changed)
+			CV_Set(&cv_cam2_height, cv_cam2_height.defaultvalue);
+
+		if (!cv_cam2_dist.changed)
+			CV_Set(&cv_cam2_dist, cv_cam2_dist.defaultvalue);*/
+
+		// Though, I don't think anyone would care about cam_rotate being reset back to the only value that makes sense :P
+		if (!cv_cam_rotate.changed)
+			CV_Set(&cv_cam_rotate, cv_cam_rotate.defaultvalue);
+
+		if (!cv_cam2_rotate.changed)
+			CV_Set(&cv_cam2_rotate, cv_cam2_rotate.defaultvalue);
+
+		if (!cv_analog.changed)
+			CV_SetValue(&cv_analog, 0);
+		if (!cv_analog2.changed)
+			CV_SetValue(&cv_analog2, 0);
+
+		displayplayer = consoleplayer; // Start with your OWN view, please!
+	}
 
 static boolean P_CanSave(void)
 {
@@ -3077,36 +3111,9 @@ boolean P_SetupLevel(boolean skipprecip, boolean reloadinggamestate)
 	// landing point for netgames.
 	netgameskip:
 
-	if (!dedicated)
+	if (!reloadinggamestate)
 	{
-		P_SetupCamera();
-
-		// Salt: CV_ClearChangedFlags() messes with your settings :(
-		/*if (!cv_cam_height.changed)
-			CV_Set(&cv_cam_height, cv_cam_height.defaultvalue);
-
-		if (!cv_cam_dist.changed)
-			CV_Set(&cv_cam_dist, cv_cam_dist.defaultvalue);
-
-		if (!cv_cam2_height.changed)
-			CV_Set(&cv_cam2_height, cv_cam2_height.defaultvalue);
-
-		if (!cv_cam2_dist.changed)
-			CV_Set(&cv_cam2_dist, cv_cam2_dist.defaultvalue);*/
-
-		// Though, I don't think anyone would care about cam_rotate being reset back to the only value that makes sense :P
-		if (!cv_cam_rotate.changed)
-			CV_Set(&cv_cam_rotate, cv_cam_rotate.defaultvalue);
-
-		if (!cv_cam2_rotate.changed)
-			CV_Set(&cv_cam2_rotate, cv_cam2_rotate.defaultvalue);
-
-		if (!cv_analog.changed)
-			CV_SetValue(&cv_analog, 0);
-		if (!cv_analog2.changed)
-			CV_SetValue(&cv_analog2, 0);
-
-		displayplayer = consoleplayer; // Start with your OWN view, please!
+		P_InitCamera();
 	}
 
 	if (cv_useranalog.value)
@@ -3140,7 +3147,7 @@ boolean P_SetupLevel(boolean skipprecip, boolean reloadinggamestate)
 	P_MapEnd();
 
 	// Remove the loading shit from the screen
-	if (rendermode != render_none && (!reloadinggamestate))
+	if (rendermode != render_none && !reloadinggamestate)
 		V_DrawFill(0, 0, BASEVIDWIDTH, BASEVIDHEIGHT, (ranspecialwipe) ? 0 : 31);
 
 	if (precache || dedicated)
