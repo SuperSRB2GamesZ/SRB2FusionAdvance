@@ -87,6 +87,7 @@ extern consvar_t cv_grcoronasize;
 extern consvar_t cv_grshaders;
 extern consvar_t cv_grfov;
 extern consvar_t cv_grmd2;
+extern consvar_t cv_grmd2interpolation;
 extern consvar_t cv_grgammared;
 extern consvar_t cv_grgammagreen;
 extern consvar_t cv_grgammablue;
