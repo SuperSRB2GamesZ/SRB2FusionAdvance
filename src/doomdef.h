@@ -544,7 +544,7 @@ extern const char *compdate, *comptime, *comprevision, *compbranch;
 
 
 
-/// Hardware renderer: OpenGL
+/// OpenGL shaders
 #define GL_SHADERS
 
 // WARNING: a should be unsigned but to add with 2048, it isn't!
