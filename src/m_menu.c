@@ -1170,17 +1170,12 @@ static menuitem_t OP_OpenGLOptionsMenu[] =
 	{IT_STRING|IT_CVAR,         NULL, "3D Models",    &cv_grmd2,      10},
 	{IT_STRING|IT_CVAR,         NULL, "Model Interpolation",    &cv_grmd2interpolation,      20},
 	{IT_STRING|IT_CVAR,         NULL, "Ambient lighting",    &cv_grmodellighting,      30},
-	{IT_STRING|IT_CVAR,         NULL, "Shaders",    &cv_grshaders,      40},
-	{IT_STRING|IT_CVAR,         NULL, "Lack of Perspective",    &cv_grshearing,      50},
-	{IT_STRING|IT_CVAR,         NULL, "Field of view",   &cv_grfov,            60},
-	{IT_STRING|IT_CVAR,         NULL, "Quality",         &cv_scr_depth,        70},
-	{IT_STRING|IT_CVAR,         NULL, "Texture Filter",  &cv_grfiltermode,     80},
-	{IT_STRING|IT_CVAR,         NULL, "Anisotropic",     &cv_granisotropicmode,90},
+	{IT_STRING|IT_CVAR,         NULL, "Field of view",   &cv_grfov,            50},
+	{IT_STRING|IT_CVAR,         NULL, "Quality",         &cv_scr_depth,        60},
+	{IT_STRING|IT_CVAR,         NULL, "Texture Filter",  &cv_grfiltermode,     70},
+	{IT_STRING|IT_CVAR,         NULL, "Anisotropic",     &cv_granisotropicmode,80},
 	{IT_STRING|IT_CVAR,         NULL, "Sky Dome",    &cv_grskydome,      100},
 	{IT_STRING|IT_CVAR,         NULL, "OpenGL Loading Screen",    &cv_glloadingscreen,      110},
-#ifdef _WINDOWS
-	{IT_STRING|IT_CVAR,         NULL, "Fullscreen",      &cv_fullscreen,       120},
-#endif
 
 #ifdef ALAM_LIGHTING
 	{IT_SUBMENU|IT_STRING,      NULL, "Lighting...",     &OP_OpenGLLightingDef,     130},
