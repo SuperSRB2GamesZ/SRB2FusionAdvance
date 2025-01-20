@@ -1159,7 +1159,7 @@ static menuitem_t OP_VideoOptionsMenu[] =
 	{IT_STRING | IT_CVAR,    NULL, "Clear Before Redraw", &cv_homremoval, 110},
 
 	{IT_STRING | IT_CVAR,    NULL, "Vertical Sync",       &cv_vidwait,    125},
-	{IT_STRING | IT_CVAR,    NULL, "Frame Interpolation",       &cv_frameinterpolation, 135},
+	{IT_STRING | IT_CVAR,    NULL, "FPS Cap",       &cv_fpscap, 135},
 
 	#ifdef HWRENDER
 	{IT_SUBMENU|IT_STRING, NULL,   "3D Card Options...",  &OP_OpenGLOptionsDef,    150},

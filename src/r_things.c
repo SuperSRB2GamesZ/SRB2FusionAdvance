@@ -1173,7 +1173,7 @@ static void R_ProjectSprite(mobj_t *thing)
 	
 
 	// do interpolation
-	if (cv_frameinterpolation.value == 1)
+	if (R_UsingFrameInterpolation())
 	{
 		R_InterpolateMobjState(thing, rendertimefrac, &interp);
 	}
@@ -1494,7 +1494,7 @@ static void R_ProjectPrecipitationSprite(precipmobj_t *thing)
 	// uncapped/interpolation
     interpmobjstate_t interp = {0};
 	// do interpolation
-	if (cv_frameinterpolation.value == 1)
+	if (R_UsingFrameInterpolation())
 	{
 		R_InterpolatePrecipMobjState(thing, rendertimefrac, &interp);
 	}
