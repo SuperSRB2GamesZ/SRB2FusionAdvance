@@ -1531,13 +1531,47 @@ void CV_AddValue(consvar_t *var, INT32 increment)
 			for (max = 0; var->PossibleValue[max+1].strvalue; max++)
 				;
 
-			if (newvalue < var->PossibleValue[MINVAL].value) // add the max+1
-				newvalue += var->PossibleValue[max].value - var->PossibleValue[MINVAL].value + 1;
+			if (newvalue < var->PossibleValue[MINVAL].value || newvalue > var->PossibleValue[MAXVAL].value)
+			{
+				INT32 currentindice = -1, newindice;
+				for (max = MAXVAL+1; var->PossibleValue[max].strvalue; max++)
+				{
+					if (var->PossibleValue[max].value == newvalue)
+					{
+						increment = 0;
+						currentindice = max;
+					}
+					else if (var->PossibleValue[max].value == var->value)
+						currentindice = max;
+				}
 
-			newvalue = var->PossibleValue[MINVAL].value + (newvalue - var->PossibleValue[MINVAL].value)
-				% (var->PossibleValue[max].value - var->PossibleValue[MINVAL].value + 1);
+				if (increment)
+				{
+					increment = (increment > 0) ? 1 : -1;
+					if (currentindice == -1 && max != MAXVAL+1)
+						newindice = ((increment > 0) ? MAXVAL : max) + increment;
+					else
+						newindice = currentindice + increment;
 
-			CV_SetValue(var, newvalue); 
+					if (newindice >= max || newindice <= MAXVAL)
+					{
+						if (var == &cv_pointlimit && (gametype == GT_MATCH) && increment > 0)
+							CV_SetValue(var, 50);
+						else
+						{
+							newvalue = var->PossibleValue[((increment > 0) ? MINVAL : MAXVAL)].value;
+							CV_SetValue(var, newvalue);
+						}
+					}
+					else
+						CV_Set(var, var->PossibleValue[newindice].strvalue);
+				}
+				else
+					CV_Set(var, var->PossibleValue[currentindice].strvalue);
+			}
+			else
+				CV_SetValue(var, newvalue);
+		}
 #undef MINVAL
 		}
 		else
