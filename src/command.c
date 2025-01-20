@@ -1123,32 +1123,42 @@ static void Setvalue(consvar_t *var, const char *valstr, boolean stealth)
 
 		if (var->PossibleValue[0].strvalue && !stricmp(var->PossibleValue[0].strvalue, "MIN")) // bounded cvar
 		{
+#define MINVAL 0
+#define MAXVAL 1
 			INT32 i;
-			// search for maximum
-			for (i = 1; var->PossibleValue[i].strvalue; i++)
-				if (!stricmp(var->PossibleValue[i].strvalue, "MAX"))
-					break;
 #ifdef PARANOIA
-			if (!var->PossibleValue[i].strvalue)
+			if (!var->PossibleValue[MAXVAL].strvalue)
 				I_Error("Bounded cvar \"%s\" without maximum!\n", var->name);
 #endif
 
-			if ((v != INT32_MIN && v < var->PossibleValue[0].value) || !stricmp(valstr, "MIN"))
+			// search for other
+			for (i = MAXVAL+1; var->PossibleValue[i].strvalue; i++)
+				if (v == var->PossibleValue[i].value || !stricmp(var->PossibleValue[i].strvalue, valstr))
+				{
+					var->value = var->PossibleValue[i].value;
+					var->string = var->PossibleValue[i].strvalue;
+					goto finish;
+				}
+
+
+			if ((v != INT32_MIN && v < var->PossibleValue[MINVAL].value) || !stricmp(valstr, "MIN"))
 			{
-				v = var->PossibleValue[0].value;
-				valstr = var->PossibleValue[0].strvalue;
+				v = var->PossibleValue[MINVAL].value;
+				valstr = var->PossibleValue[MINVAL].strvalue;
 				override = true;
 				overrideval = v;
 			}
-			else if ((v != INT32_MIN && v > var->PossibleValue[i].value) || !stricmp(valstr, "MAX"))
+			else if ((v != INT32_MIN && v > var->PossibleValue[MAXVAL].value) || !stricmp(valstr, "MAX"))
 			{
-				v = var->PossibleValue[i].value;
-				valstr = var->PossibleValue[i].strvalue;
+				v = var->PossibleValue[MAXVAL].value;
+				valstr = var->PossibleValue[MAXVAL].strvalue;
 				override = true;
 				overrideval = v;
 			}
 			if (v == INT32_MIN)
 				goto badinput;
+#undef MINVAL
+#undef MAXVAL
 		}
 		else
 		{
@@ -1481,6 +1491,9 @@ void CV_AddValue(consvar_t *var, INT32 increment)
 {
 	INT32 newvalue, max;
 
+	if (!increment)
+		return;
+
 	// count pointlimit better
 	if (var == &cv_pointlimit && (gametype == GT_MATCH))
 		increment *= 50;
@@ -1488,13 +1501,11 @@ void CV_AddValue(consvar_t *var, INT32 increment)
 
 	if (var->PossibleValue)
 	{
-#define MINVAL 0
 		if (var == &cv_nextmap)
 		{
 			// Special case for the nextmap variable, used only directly from the menu
 			INT32 oldvalue = var->value - 1, gt;
 			gt = cv_newgametype.value;
-			if (increment != 0) // Going up!
 			{
 				newvalue = var->value - 1;
 				do
@@ -1525,11 +1536,14 @@ void CV_AddValue(consvar_t *var, INT32 increment)
 				return;
 			}
 		}
+#define MINVAL 0
+#define MAXVAL 1
 		else if (var->PossibleValue[MINVAL].strvalue && !strcmp(var->PossibleValue[MINVAL].strvalue, "MIN"))
 		{
-			// search the next to last
-			for (max = 0; var->PossibleValue[max+1].strvalue; max++)
-				;
+#ifdef PARANOIA
+			if (!var->PossibleValue[MAXVAL].strvalue)
+				I_Error("Bounded cvar \"%s\" without maximum!\n", var->name);
+#endif
 
 			if (newvalue < var->PossibleValue[MINVAL].value || newvalue > var->PossibleValue[MAXVAL].value)
 			{
@@ -1573,7 +1587,7 @@ void CV_AddValue(consvar_t *var, INT32 increment)
 				CV_SetValue(var, newvalue);
 		}
 #undef MINVAL
-		}
+#undef MAXVAL
 		else
 		{
 			INT32 currentindice = -1, newindice;
@@ -1582,8 +1596,6 @@ void CV_AddValue(consvar_t *var, INT32 increment)
 			for (max = 0; var->PossibleValue[max].strvalue; max++)
 				if (var->PossibleValue[max].value == var->value)
 					currentindice = max;
-
-			max--;
 
 			if (var == &cv_chooseskin)
 			{
@@ -1623,7 +1635,7 @@ void CV_AddValue(consvar_t *var, INT32 increment)
 					var->value);
 #endif
 
-			newindice = (currentindice + increment + max + 1) % (max+1);
+			newindice = (currentindice + increment + max) % max;
 			CV_Set(var, var->PossibleValue[newindice].strvalue);
 		}
 	}
