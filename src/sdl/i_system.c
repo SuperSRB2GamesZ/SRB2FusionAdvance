@@ -2041,15 +2041,19 @@ static Uint64 timer_frequency;
 static Uint64 tic_epoch;
 static double tic_frequency;
 static Uint64 basetime = 0;
-tic_t I_GetTime (void)
+static double elapsed_tics;
+static void UpdateElapsedTics(void)
 {
-	static double elapsed;
 
 	const Uint64 now = SDL_GetPerformanceCounter();
-	elapsed += (now - tic_epoch) / tic_frequency;
+	elapsed_tics += (now - tic_epoch) / tic_frequency;
 	tic_epoch = now; // moving epoch
+}
 
-	return (tic_t)elapsed;
+tic_t I_GetTime(void)
+{
+	UpdateElapsedTics();
+	return (tic_t) floor(elapsed_tics);
 }
 
 precise_t I_GetPreciseTime(void)
@@ -2061,12 +2065,21 @@ int I_PreciseToMicros(precise_t d)
 {
 	return (int)(d / (timer_frequency / 1000000.0));
 }
+
 Uint64 I_GetPrecisePrecision(void)
 {
 	return SDL_GetPerformanceFrequency();
 }
 
-fixed_t I_GetTimeFrac (void)
+
+float I_GetTimeFrac(void)
+{
+	UpdateElapsedTics();
+	
+	return elapsed_tics;
+}
+
+fixed_t I_GetTimeFracOld(void) //hack for smooth console
 {
 	Uint64 ticks;
 	Uint64 prevticks;
@@ -2079,6 +2092,7 @@ fixed_t I_GetTimeFrac (void)
 	frac = FixedDiv((ticks - prevticks) * FRACUNIT, (int)lroundf((1.f/TICRATE)*1000 * FRACUNIT));
 	return frac > FRACUNIT ? FRACUNIT : frac;
 }
+
 //
 //I_StartupTimer
 //
@@ -2087,6 +2101,7 @@ void I_StartupTimer(void)
 	timer_frequency = SDL_GetPerformanceFrequency();
 	tic_epoch       = SDL_GetPerformanceCounter();
 	tic_frequency   = timer_frequency / (double)NEWTICRATE;
+	elapsed_tics    = 0.0;
 }
 
 
