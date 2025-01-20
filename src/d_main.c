@@ -228,17 +228,17 @@ void D_ProcessEvents(void)
 // added comment : there is a wipe eatch change of the gamestate
 gamestate_t wipegamestate = GS_LEVEL;
 
-static void D_Display(void)
+static boolean D_Display(void)
 {
 	boolean forcerefresh = false;
 	static boolean wipe = false;
 	INT32 wipedefindex = 0;
 
 	if (dedicated)
-		return;
+		return false;
 
 	if (nodrawers)
-		return; // for comparative timing/profiling 
+		return false; // for comparative timing/profiling
 
 
 	// check for change of screen size (video mode)
@@ -498,8 +498,9 @@ static void D_Display(void)
 			V_DrawRightAlignedString(BASEVIDWIDTH, BASEVIDHEIGHT-ST_HEIGHT-10, V_YELLOWMAP, s);
 		}
 
-		I_FinishUpdate(); // page flip or blit buffer
+		return true; // Do I_FinishUpdate in the main loop
 	}
+	return false;
 }
 
 
@@ -515,8 +516,8 @@ void D_SRB2Loop(void)
 	boolean ticked = false;
 	boolean interp = false;
 	boolean doDisplay = false;
-	precise_t frameTime = 0;
-	int frameElapsed = 0;
+	double frameEnd = 0.0;	
+	boolean screenUpdate = false;
 
 
 
@@ -565,8 +566,6 @@ void D_SRB2Loop(void)
 
 	for (;;)
 	{
-		frameTime = I_GetPreciseTime();
-		frameElapsed = 0;
 
 		if (lastwipetic)
 		{
@@ -578,8 +577,6 @@ void D_SRB2Loop(void)
 		entertic = I_GetTime();
 		realtics = entertic - oldentertics;
 		oldentertics = entertic;
-
-		refreshdirmenu = 0; // not sure where to put this, here as good as any?
 
 
 
@@ -597,12 +594,14 @@ void D_SRB2Loop(void)
 #endif
 
 		interp = R_UsingFrameInterpolation();
-		doDisplay = false;
+		doDisplay = screenUpdate = false;
 		ticked = false;
 
 #ifdef HW3SOUND
 		HW3S_BeginFrameUpdate();
 #endif
+
+		refreshdirmenu = 0; // not sure where to put this, here as good as any?
 
 		if (realtics > 0 || singletics)
 		{
@@ -695,13 +694,9 @@ void D_SRB2Loop(void)
 
 		if (interp || doDisplay)
 		{
-			D_Display();
+			screenUpdate = D_Display();
 		}
 
-		if (moviemode)
-			M_SaveFrame();
-		if (takescreenshot) // Only take screenshots after drawing.
-			M_DoScreenShot();
 
 		// consoleplayer -> displayplayer (hear sounds from viewpoint)
 		S_UpdateSounds(); // move positional sounds
@@ -717,18 +712,30 @@ void D_SRB2Loop(void)
 		LUA_Step();
 #endif
 
-		// Moved to here from I_FinishUpdate.
-		// It doesn't track fades properly anymore by being here (might be easy fix),
-		// but it's a little more accurate for actual rendering when its here.
-		SCR_CalculateFPS();
 
-		// Fully completed frame made, handle frame cap delay.
-		frameElapsed = I_PreciseToMicros(I_GetPreciseTime() - frameTime);
+
+		// Fully completed frame made.
+		frameEnd = I_GetFrameTime();
 
 		if (!singletics)
 		{
-			I_FrameCapSleep(frameElapsed);
+			I_FrameCapSleep(frameEnd);
 		}
+
+		// I_FinishUpdate is now here instead of D_Display,
+		// because it synchronizes it more closely with the frame counter.
+		if (screenUpdate == true)
+		{
+			//PS_START_TIMING(ps_swaptime);
+			I_FinishUpdate(); // page flip or blit buffer
+			//PS_STOP_TIMING(ps_swaptime);
+		}
+
+		// Only take screenshots after drawing.
+		if (moviemode)
+			M_SaveFrame();
+		if (takescreenshot)
+			M_DoScreenShot();
 	}
 }
 

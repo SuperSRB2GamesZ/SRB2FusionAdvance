@@ -1211,7 +1211,7 @@ void I_FinishUpdate(void)
 	if (I_SkipFrame())
 		return;
 
-	//SCR_CalculateFPS(); // Moved to main loop
+	SCR_CalculateFPS();
 
 	SCR_DisplayTicRate();
 
