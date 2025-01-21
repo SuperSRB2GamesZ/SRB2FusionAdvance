@@ -566,6 +566,7 @@ void D_SRB2Loop(void)
 
 	for (;;)
 	{
+		frameEnd = I_GetFrameTime();
 
 		if (lastwipetic)
 		{
@@ -715,7 +716,7 @@ void D_SRB2Loop(void)
 
 
 		// Fully completed frame made.
-		frameEnd = I_GetFrameTime();
+		
 
 		if (!singletics)
 		{
