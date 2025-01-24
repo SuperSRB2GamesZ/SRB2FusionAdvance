@@ -247,31 +247,6 @@ static void FlipCam2_OnChange(void)
 	SendWeaponPref2();
 }
 
-//
-// R_PointOnSide
-// Traverse BSP (sub) tree,
-// check point against partition plane.
-// Returns side 0 (front) or 1 (back).
-//
-// killough 5/2/98: reformatted
-//
-INT32 R_PointOnSide(fixed_t x, fixed_t y, node_t *restrict node)
-{
-	if (!node->dx)
-		return x <= node->x ? node->dy > 0 : node->dy < 0;
-
-	if (!node->dy)
-		return y <= node->y ? node->dx < 0 : node->dx > 0;
-
-	x -= node->x;
-	y -= node->y;
-
-	// Try to quickly decide by looking at sign bits.
-	// also use a mask to avoid branch prediction
-	INT32 mask = (node->dy ^ node->dx ^ x ^ y) >> 31;
-	return (mask & ((node->dy ^ x) < 0)) |  // (left is negative)
-		(~mask & (FixedMul(y, node->dx>>FRACBITS) >= FixedMul(node->dy>>FRACBITS, x)));
-}
 
 // killough 5/2/98: reformatted
 INT32 R_PointOnSegSide(fixed_t x, fixed_t y, seg_t *restrict line)
@@ -712,18 +687,6 @@ void R_Init(void)
 	framecount = 0;
 }
 
-//
-// R_PointInSubsector
-//
-subsector_t *R_PointInSubsector(fixed_t x, fixed_t y)
-{
-	size_t nodenum = numnodes-1;
-
-	while (!(nodenum & NF_SUBSECTOR))
-		nodenum = nodes[nodenum].children[R_PointOnSide(x, y, nodes+nodenum)];
-
-	return &subsectors[nodenum & ~NF_SUBSECTOR];
-}
 
 //
 // R_IsPointInSubsector, same as above but returns 0 if not in subsector

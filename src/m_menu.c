@@ -2871,7 +2871,7 @@ void M_Init(void)
 #ifdef HWRENDER
 	// Permanently hide some options based on render mode
 	if (rendermode == render_soft)
-		OP_VideoOptionsMenu[1].status = IT_DISABLED;
+		OP_VideoOptionsMenu[12].status = IT_DISABLED;
 #endif
 
 #ifndef NONET
