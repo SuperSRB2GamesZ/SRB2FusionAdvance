@@ -24,6 +24,70 @@
 #endif 
 #include "z_zone.h"
 
+
+static CV_PossibleValue_t fpscap_cons_t[] = {
+	{-1, "Match refresh rate"},
+	{0, "Unlimited"},
+#ifdef DEVELOP
+	// Lower values are actually pretty useful for debugging interp problems!
+	{1, "One Singular Frame"},
+	{10, "10"},
+	{20, "20"},
+	{25, "25"},
+	{30, "30"},
+#endif
+	{35, "35"},
+	{50, "50"},
+	{60, "60"},
+	{70, "70"},
+	{75, "75"},
+	{90, "90"},
+	{100, "100"},
+	{120, "120"},
+	{144, "144"},
+	{165, "165"},
+	{200, "200"},
+	{240, "240"},
+	{0, NULL}
+};
+ // Sadly, I haven't been able to get individual cap values to work properly :(
+
+consvar_t cv_fpscap = {"fpscap", "Match refresh rate", CV_SAVE, fpscap_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL};
+
+
+
+UINT32 R_GetFramerateCap(void)
+{
+
+	if (rendermode == render_none)
+	{
+		// If we're not rendering (dedicated server),
+		// we shouldn't be using any interpolation.
+		return TICRATE;
+	}
+
+	if (cv_fpscap.value < 0)
+	{
+		return I_GetRefreshRate();
+	}
+
+	return cv_fpscap.value;
+}
+
+
+boolean R_UsingFrameInterpolation(void)
+{
+
+	if (rendermode == render_none)
+	{
+		// If we're not rendering (dedicated server),
+		// we shouldn't be using any interpolation.
+		return TICRATE;
+	}
+
+	return (R_GetFramerateCap() != TICRATE || cv_timescale.value < FRACUNIT);
+}
+
 static viewvars_t p1view_old;
 static viewvars_t p1view_new;
 static viewvars_t p2view_old;
@@ -187,7 +251,7 @@ void R_InterpolateMobjState(mobj_t *mobj, fixed_t frac, interpmobjstate_t *out)
 	out->x =  R_LerpFixed(mobj->old_x, mobj->x, frac);
 	out->y =  R_LerpFixed(mobj->old_y, mobj->y, frac);
 	out->z =  R_LerpFixed(mobj->old_z, mobj->z, frac);
-	out->angle = R_LerpAngle(mobj->old_angle, mobj->angle, frac);
+	out->angle = mobj->resetinterp ? mobj->angle : R_LerpAngle(mobj->old_angle, mobj->angle, frac);
 }
 
 void R_InterpolatePrecipMobjState(precipmobj_t *mobj, fixed_t frac, interpmobjstate_t *out)
@@ -282,6 +346,7 @@ void R_ResetMobjInterpolationState(mobj_t *mobj)
 	mobj->old_y = mobj->y;
 	mobj->old_z = mobj->z;
 	mobj->old_angle = mobj->angle;
+	mobj->resetinterp = false;
 }
 
 //
