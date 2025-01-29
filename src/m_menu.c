@@ -1171,7 +1171,7 @@ static menuitem_t OP_VideoModeMenu[] =
 static menuitem_t OP_OpenGLOptionsMenu[] =
 {
 	{IT_STRING|IT_CVAR,         NULL, "3D Models",    &cv_grmd2,      10},
-	{IT_STRING|IT_CVAR,         NULL, "Model Interpolation",    &cv_grmd2interpolation,      20},
+	{IT_STRING|IT_CVAR,         NULL, "Model Interpolation",    &cv_grmodelinterpolation,      20},
 	{IT_STRING|IT_CVAR,         NULL, "Ambient lighting",    &cv_grmodellighting,      30},
 
 	{IT_STRING|IT_CVAR,		NULL, "Shaders",					&cv_grshaders,				 50},
