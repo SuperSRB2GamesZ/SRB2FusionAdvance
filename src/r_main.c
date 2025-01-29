@@ -178,8 +178,6 @@ consvar_t cv_homremoval = {"homremoval", "No", CV_SAVE, homremoval_cons_t, NULL,
 
 consvar_t cv_maxportals = {"maxportals", "2", CV_SAVE, maxportals_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL}; 
 
-// Uncapped framerate
-consvar_t cv_frameinterpolation = {"frameinterpolation", "Off", CV_SAVE, CV_OnOff, NULL, 0, NULL, NULL, 0, 0, NULL};
 
 
 
@@ -846,7 +844,7 @@ void R_SetupFrame(player_t *player, boolean skybox)
 	//newview->sin = FINESINE(viewangle>>ANGLETOFINESHIFT);
 	//viewcos = FINECOSINE(viewangle>>ANGLETOFINESHIFT);
 
-	R_InterpolateView(player, false, cv_frameinterpolation.value == 1 ? rendertimefrac : FRACUNIT);
+	R_InterpolateView(player, false, R_UsingFrameInterpolation() ? rendertimefrac : FRACUNIT);
 }
 
 void R_SkyboxFrame(player_t *player)
@@ -1086,7 +1084,7 @@ void R_SkyboxFrame(player_t *player)
 	//viewsin = FINESINE(viewangle>>ANGLETOFINESHIFT);
 	//viewcos = FINECOSINE(viewangle>>ANGLETOFINESHIFT);
 
-	R_InterpolateView(player, true, cv_frameinterpolation.value == 1 ? rendertimefrac : FRACUNIT);
+	R_InterpolateView(player, true, R_UsingFrameInterpolation() ? rendertimefrac : FRACUNIT);
 
 }
 
@@ -1400,7 +1398,7 @@ void R_RegisterEngineStuff(void)
 	// initialized to standard viewheight
 	CV_RegisterVar(&cv_viewheight); 
 	// Uncapped
-	CV_RegisterVar(&cv_frameinterpolation);
+	CV_RegisterVar(&cv_fpscap);
 
 #ifdef HWRENDER
 	// GL-specific Commands

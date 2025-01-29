@@ -160,6 +160,7 @@ static char returnWadPath[256];
 
 #include "../doomdef.h"
 #include "../m_misc.h"
+#include "../i_time.h"
 #include "../i_video.h"
 #include "../i_sound.h"
 #include "../i_system.h"
@@ -2038,64 +2039,88 @@ ticcmd_t *I_BaseTiccmd2(void)
 
 
 static Uint64 timer_frequency;
-static Uint64 tic_epoch;
-static double tic_frequency;
-static Uint64 basetime = 0;
-tic_t I_GetTime (void)
-{
-	static double elapsed;
-
-	const Uint64 now = SDL_GetPerformanceCounter();
-	elapsed += (now - tic_epoch) / tic_frequency;
-	tic_epoch = now; // moving epoch
-
-	return (tic_t)elapsed;
-}
 
 precise_t I_GetPreciseTime(void)
 {
 	return SDL_GetPerformanceCounter();
 }
 
-int I_PreciseToMicros(precise_t d)
-{
-	return (int)(d / (timer_frequency / 1000000.0));
-}
-Uint64 I_GetPrecisePrecision(void)
+
+
+UINT64 I_GetPrecisePrecision(void)
 {
 	return SDL_GetPerformanceFrequency();
 }
 
-fixed_t I_GetTimeFrac (void)
+
+
+static UINT32 frame_rate;
+
+static double frame_frequency;
+static UINT64 frame_epoch;
+static double elapsed_frames;
+
+static void I_InitFrameTime(const UINT64 now, const UINT32 cap)
 {
-	Uint64 ticks;
-	Uint64 prevticks;
-	fixed_t frac;
+	frame_rate = cap;
+	frame_epoch = now;
 
-	ticks = SDL_GetTicks() - basetime;
-	//if (ticks > tics * 1000 / TICRATE) return 1 * FRACUNIT;
-	prevticks = prev_tics * 1000 / TICRATE;
+	//elapsed_frames = 0.0;
 
-	frac = FixedDiv((ticks - prevticks) * FRACUNIT, (int)lroundf((1.f/TICRATE)*1000 * FRACUNIT));
-	return frac > FRACUNIT ? FRACUNIT : frac;
+	if (frame_rate == 0)
+	{
+		// Shouldn't be used, but just in case...?
+		frame_frequency = 1.0;
+		return;
+	}
+
+	frame_frequency = timer_frequency / (double)frame_rate;
 }
+
+double I_GetFrameTime(void)
+{
+	const UINT64 now = SDL_GetPerformanceCounter();
+	const UINT32 cap = R_GetFramerateCap();
+
+	if (cap != frame_rate)
+	{
+		I_InitFrameTime(now, cap);
+	}
+
+	if (frame_rate == 0)
+	{
+		// Always advance a frame.
+		elapsed_frames += 1.0;
+	}
+	else
+	{
+		elapsed_frames += (now - frame_epoch) / frame_frequency;
+	}
+
+	frame_epoch = now; // moving epoch
+	return elapsed_frames;
+}
+
 //
 //I_StartupTimer
 //
 void I_StartupTimer(void)
 {
 	timer_frequency = SDL_GetPerformanceFrequency();
-	tic_epoch       = SDL_GetPerformanceCounter();
-	tic_frequency   = timer_frequency / (double)NEWTICRATE;
+
+	I_InitFrameTime(0, R_GetFramerateCap());
+	elapsed_frames  = 0.0;
 }
 
-
-
-void I_Sleep(void)
+void I_Sleep(UINT32 ms)
 {
-	if (cv_sleep.value != -1)
-		SDL_Delay(cv_sleep.value);
+	SDL_Delay(ms);
 }
+
+
+
+
+
 
 INT32 I_StartupSystem(void)
 {
