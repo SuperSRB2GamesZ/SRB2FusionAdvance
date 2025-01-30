@@ -727,14 +727,8 @@ subsector_t *R_IsPointInSubsector(fixed_t x, fixed_t y)
 //
 
 
-// WARNING: a should be unsigned but to add with 2048, it isn't!
-#define AIMINGTODY(a) ((FINETANGENT((2048+(((INT32)a)>>ANGLETOFINESHIFT)) & FINEMASK)*160)>>FRACBITS)
 
-// recalc necessary stuff for mouseaiming
-// slopes are already calculated for the full possible view (which is 4*viewheight).
-// 18/08/18: (No it's actually 16*viewheight, thanks Jimita for finding this out)
 
-#undef AIMINGTODY
 
 void R_SetupFrame(player_t *player, boolean skybox)
 {
@@ -1090,6 +1084,32 @@ void R_SkyboxFrame(player_t *player)
 
 }
 
+
+boolean R_IsViewpointThirdPerson(player_t *player, boolean skybox)
+{
+	boolean chasecam = false;
+	if (splitscreen && player == &players[secondarydisplayplayer] && player != &players[consoleplayer])
+		chasecam = (cv_chasecam2.value != 0);
+	else
+		chasecam = (cv_chasecam.value != 0);
+
+	if (player->climbing || (player->pflags & PF_NIGHTSMODE)  || player->playerstate == PST_DEAD || gamestate == GS_TITLESCREEN)
+		chasecam = true; // force chasecam on
+	else if (player->spectator) // no spectator chasecam
+		chasecam = false; // force chasecam off
+
+	// cut-away view stuff
+	if (player->awayviewtics || skybox)
+		return chasecam;
+	// use outside cam view
+	else if (!player->spectator && chasecam)
+		return true;
+
+	// use the player's eyes view
+	return false;
+}
+
+
 #define ANGLED_PORTALS
 
 static void R_PortalFrame(line_t *start, line_t *dest, portal_pair *portal)
@@ -1408,9 +1428,6 @@ void R_RegisterEngineStuff(void)
 	CV_RegisterVar(&cv_grgammagreen);
 	CV_RegisterVar(&cv_grgammared);
 	CV_RegisterVar(&cv_grfovchange);
-	CV_RegisterVar(&cv_grfog);
-	CV_RegisterVar(&cv_grfogcolor);
-	CV_RegisterVar(&cv_grsoftwarefog);
 #ifdef ALAM_LIGHTING
 	CV_RegisterVar(&cv_grstaticlighting);
 	CV_RegisterVar(&cv_grdynamiclighting);
